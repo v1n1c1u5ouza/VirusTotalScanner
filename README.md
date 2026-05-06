@@ -24,6 +24,8 @@ Este projeto faz parte do meu portfólio de **Engenharia de Segurança**. O obje
   - [x] Tratamento de respostas JSON (nlohmann/json).
   - [x] Lógica de filtragem de resultados (Malicioso/Suspeito/Inofensivo).
 - [x] **Upload Ativo**: Sistema de upload automático para arquivos inéditos usando `multipart/form-data` e `curl_mime`.
+- [x] **Análise em Tempo Real (Polling)**: Monitoramento automático do status de análise para novos uploads com tratamento de concorrência e timers.
+- [x] **Gestão de Memória**: Implementação robusta contra Dangling Pointers e Memory Leaks em loops de rede.
 
 ## Como clonar e preparar o ambiente
 (Em breve: instruções de compilação para WSL/Ubuntu)

@@ -6,6 +6,8 @@
 #include <sstream>
 #include <openssl/sha.h>
 #include <curl/curl.h>
+#include <thread>
+#include <chrono>
 
 Scanner::Scanner(const std::string &apiKey) : apiKey(apiKey)
 {
@@ -153,6 +155,8 @@ bool Scanner::uploadFile(const std::string &filePath)
   std::cout << "[*] Enviando arquivo para análise..." << std::endl;
   CURLcode res = curl_easy_perform(curl);
 
+  std::string analysisId;
+
   if (res != CURLE_OK)
   {
     std::cerr << "[-] Erro no upload: " << curl_easy_strerror(res) << std::endl;
@@ -165,11 +169,10 @@ bool Scanner::uploadFile(const std::string &filePath)
 
     if (!jsonResponse.contains("data"))
     {
-      std::cerr << "[-] Resposta da API não contém dados de análise." << std::endl;
       goto cleanup;
     }
-    std::cout << "[+] Upload concluído! ID da análise: " << jsonResponse["data"]["id"] << std::endl;
-    std::cout << "[!] Nota: A análise pode levar alguns minutos para ser processada." << std::endl;
+
+    analysisId = jsonResponse["data"]["id"];
     success = true;
   }
   catch (const std::exception &e)
@@ -182,7 +185,62 @@ cleanup:
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
+  if (success && !analysisId.empty()) {
+    std::cerr << "[-] Resposta da API não contém dados de análise." << std::endl;
+    std::cout << "[+] Upload concluído! ID: " << analysisId << std::endl;
+
+    checkAnalysisStatus(analysisId);
+  }
+
   return success;
+}
+
+void Scanner::checkAnalysisStatus(const std::string &analysisId)
+{
+    std::string url = "https://www.virustotal.com/api/v3/analyses/" + analysisId;
+    std::cout << "[*] Aguardando conclusão da análise..." << std::endl;
+
+    for (int i = 0; i < 5; ++i)
+    {
+        std::string readBuffer;
+        struct curl_slist *headers = NULL;
+
+        CURL *curl = setupCurl(url, readBuffer, headers);
+        
+        if (curl)
+        {
+            CURLcode res = curl_easy_perform(curl);
+            if (res == CURLE_OK)
+            {
+                auto json = nlohmann::json::parse(readBuffer);
+                std::string status = json["data"]["attributes"]["status"];
+
+                if (status == "completed")
+                {
+                    std::cout << "[+] Análise finalizada!" << std::endl;
+                    auto stats = json["data"]["attributes"]["stats"];
+                    
+                    std::cout << "\n=== RESULTADO FINAL (APÓS UPLOAD) ===" << std::endl;
+                    std::cout << "Maliciosos: " << stats["malicious"] << std::endl;
+                    std::cout << "Inofensivos: " << stats["harmless"] << std::endl;
+                    std::cout << "=====================================\n" << std::endl;
+                    
+                    curl_slist_free_all(headers);
+                    curl_easy_cleanup(curl);
+                    return;
+                }
+                
+                std::cout << "[...] Status: " << status << ". Tentando novamente em 15s..." << std::endl;
+            }
+            
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+        }
+        
+        std::this_thread::sleep_for(std::chrono::seconds(15));
+    }
+
+    std::cout << "[!] O tempo de espera esgotou." << std::endl;
 }
 
 void Scanner::displayResult(const nlohmann::json &report)

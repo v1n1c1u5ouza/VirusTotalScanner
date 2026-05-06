@@ -12,6 +12,8 @@ public:
 
   void processFile(const std::string &filePath);
 
+  void checkAnalysisStatus(const std::string &analysisId);
+  
 private:
   std::string apiKey;
 

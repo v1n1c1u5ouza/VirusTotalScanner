@@ -1,1 +1,19 @@
-# VirusTotalScanner
+# VirusTotal Scanner C++
+
+Ferramenta de linha de comando (CLI) desenvolvida em C++ para análise de integridade de arquivos utilizando a API do VirusTotal. 
+
+## Objetivo do Projeto
+Este projeto faz parte do meu portfólio de **Engenharia de Segurança**. O objetivo é demonstrar competência em:
+- Integração com APIs REST de segurança.
+- Manipulação de arquivos e cálculo de hashes criptográficos (SHA-256).
+- Programação de sistemas em C++ com foco em performance e segurança.
+
+## Arquitetura
+- **C++17**: Linguagem principal.
+- **libcurl**: Comunicação HTTP.
+- **OpenSSL**: Processamento de Hash SHA-256.
+- **nlohmann/json**: Manipulação de dados JSON.
+- **CMake**: Sistema de build.
+
+## Como clonar e preparar o ambiente
+(Em breve: instruções de compilação para WSL/Ubuntu)

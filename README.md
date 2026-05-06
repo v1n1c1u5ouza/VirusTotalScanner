@@ -15,5 +15,10 @@ Este projeto faz parte do meu portfólio de **Engenharia de Segurança**. O obje
 - **nlohmann/json**: Manipulação de dados JSON.
 - **CMake**: Sistema de build.
 
+## Progresso do Desenvolvimento
+- [x] Arquitetura de pastas e sistema de build (CMake).
+- [x] CLI básica para recepção de argumentos.
+- [x] **Motor de Hashing**: Implementação de leitura binária com buffer (32KB) e integração com OpenSSL para geração de hashes SHA-256.
+
 ## Como clonar e preparar o ambiente
 (Em breve: instruções de compilação para WSL/Ubuntu)

@@ -19,6 +19,11 @@ Este projeto faz parte do meu portfólio de **Engenharia de Segurança**. O obje
 - [x] Arquitetura de pastas e sistema de build (CMake).
 - [x] CLI básica para recepção de argumentos.
 - [x] **Motor de Hashing**: Implementação de leitura binária com buffer (32KB) e integração com OpenSSL para geração de hashes SHA-256.
+- [x] **Integração com VirusTotal API v3**:
+  - [x] Consultas automatizadas via libcurl.
+  - [x] Tratamento de respostas JSON (nlohmann/json).
+  - [x] Lógica de filtragem de resultados (Malicioso/Suspeito/Inofensivo).
+- [ ] Upload automático de arquivos não encontrados (Próximo passo).
 
 ## Como clonar e preparar o ambiente
 (Em breve: instruções de compilação para WSL/Ubuntu)

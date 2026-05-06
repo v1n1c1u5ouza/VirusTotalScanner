@@ -25,6 +25,12 @@ std::map<std::string, std::string> Utils::loadEnv(const std::string &filePath)
       envVars[key] = value;
     }
   }
-  
+
   return envVars;
+}
+
+size_t Utils::WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+ ((std::string *)userp) ->append((char *)contents, size * nmemb);
+ return size * nmemb;  
 }

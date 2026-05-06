@@ -35,8 +35,11 @@ void Scanner::processFile(const std::string &filePath)
 
   if (!report.contains("data"))
   {
-    std::cout << "[!] Arquivo novo. Iniciando fluxo de upload..." << std::endl;
-    // uploadFile(filePath);
+    std::cout << "[!] Arquivo não encontrado no VirusTotal." << std::endl;
+    if (uploadFile(filePath))
+    {
+      std::cout << "[+] O arquivo foi enviado com sucesso para a fila de análise." << std::endl;
+    }
     return;
   }
 
@@ -81,41 +84,44 @@ std::string Scanner::calculateSHA256(const std::string &filePath)
   return ss.str();
 }
 
-nlohmann::json Scanner::getReport(const std::string &hash)
+CURL *Scanner::setupCurl(const std::string &url, std::string &responseBuffer, struct curl_slist *&headers)
 {
   CURL *curl = curl_easy_init();
+  if (!curl)
+    return nullptr;
+
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+  std::string authHeader = "x-apikey: " + apiKey;
+  headers = curl_slist_append(headers, authHeader.c_str());
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, Utils::WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseBuffer);
+
+  return curl;
+}
+
+nlohmann::json Scanner::getReport(const std::string &hash)
+{
   std::string readBuffer;
+  struct curl_slist *headers = NULL;
+  std::string url = "https://www.virustotal.com/api/v3/files/" + hash;
+
+  CURL *curl = setupCurl(url, readBuffer, headers);
   nlohmann::json responseJson;
 
   if (curl)
   {
-    std::string url = "https://www.virustotal.com/api/v3/files/" + hash;
-
-    struct curl_slist *headers = NULL;
-    std::string authHeader = "x-apiKey: " + apiKey;
-    headers = curl_slist_append(headers, authHeader.c_str());
-
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, Utils::WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
     CURLcode res = curl_easy_perform(curl);
-
-    if (res != CURLE_OK)
-    {
-      std::cerr << "[-] Erro na requisição: " << curl_easy_strerror(res) << std::endl;
-    }
-    else
+    if (res == CURLE_OK)
     {
       try
       {
         responseJson = nlohmann::json::parse(readBuffer);
       }
-      catch (const std::exception &e)
+      catch (...)
       {
-        std::cerr << "[-] Erro ao processar JSON: " << e.what() << std::endl;
       }
     }
 
@@ -124,6 +130,59 @@ nlohmann::json Scanner::getReport(const std::string &hash)
   }
 
   return responseJson;
+}
+
+bool Scanner::uploadFile(const std::string &filePath)
+{
+  std::string readBuffer;
+  struct curl_slist *headers = NULL;
+  std::string url = "https://www.virustotal.com/api/v3/files";
+
+  CURL *curl = setupCurl(url, readBuffer, headers);
+  if (!curl)
+    return false;
+
+  bool success = false;
+
+  curl_mime *mime = curl_mime_init(curl);
+  curl_mimepart *part = curl_mime_addpart(mime);
+  curl_mime_name(part, "file");
+  curl_mime_filedata(part, filePath.c_str());
+  curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+
+  std::cout << "[*] Enviando arquivo para análise..." << std::endl;
+  CURLcode res = curl_easy_perform(curl);
+
+  if (res != CURLE_OK)
+  {
+    std::cerr << "[-] Erro no upload: " << curl_easy_strerror(res) << std::endl;
+    goto cleanup;
+  }
+
+  try
+  {
+    auto jsonResponse = nlohmann::json::parse(readBuffer);
+
+    if (!jsonResponse.contains("data"))
+    {
+      std::cerr << "[-] Resposta da API não contém dados de análise." << std::endl;
+      goto cleanup;
+    }
+    std::cout << "[+] Upload concluído! ID da análise: " << jsonResponse["data"]["id"] << std::endl;
+    std::cout << "[!] Nota: A análise pode levar alguns minutos para ser processada." << std::endl;
+    success = true;
+  }
+  catch (const std::exception &e)
+  {
+    std::cerr << "[-] Erro crítico ao processar resposta do servidor." << std::endl;
+  }
+
+cleanup:
+  curl_mime_free(mime);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  return success;
 }
 
 void Scanner::displayResult(const nlohmann::json &report)
@@ -150,5 +209,3 @@ void Scanner::displayResult(const nlohmann::json &report)
   }
   std::cout << std::endl;
 }
-
-bool Scanner::uploadFile(const std::string &filePath) { return false; }

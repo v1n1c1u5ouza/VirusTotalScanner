@@ -2,6 +2,7 @@
 #define SCANNER_HPP
 
 #include <string>
+#include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
 class Scanner
@@ -21,6 +22,8 @@ private:
   bool uploadFile(const std::string &filePath);
 
   void displayResult(const nlohmann::json &report);
+
+  CURL* setupCurl(const std::string &url, std::string &responseBuffer, struct curl_slist* &headers);
 };
 
 #endif

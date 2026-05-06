@@ -23,7 +23,7 @@ Este projeto faz parte do meu portfólio de **Engenharia de Segurança**. O obje
   - [x] Consultas automatizadas via libcurl.
   - [x] Tratamento de respostas JSON (nlohmann/json).
   - [x] Lógica de filtragem de resultados (Malicioso/Suspeito/Inofensivo).
-- [ ] Upload automático de arquivos não encontrados (Próximo passo).
+- [x] **Upload Ativo**: Sistema de upload automático para arquivos inéditos usando `multipart/form-data` e `curl_mime`.
 
 ## Como clonar e preparar o ambiente
 (Em breve: instruções de compilação para WSL/Ubuntu)

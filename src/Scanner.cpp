@@ -185,7 +185,8 @@ cleanup:
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
-  if (success && !analysisId.empty()) {
+  if (success && !analysisId.empty())
+  {
     std::cerr << "[-] Resposta da API não contém dados de análise." << std::endl;
     std::cout << "[+] Upload concluído! ID: " << analysisId << std::endl;
 
@@ -197,55 +198,68 @@ cleanup:
 
 void Scanner::checkAnalysisStatus(const std::string &analysisId)
 {
-    std::string url = "https://www.virustotal.com/api/v3/analyses/" + analysisId;
-    std::cout << "[*] Aguardando conclusão da análise..." << std::endl;
+  std::string url = "https://www.virustotal.com/api/v3/analyses/" + analysisId;
+  std::cout << "[*] Aguardando conclusão da análise..." << std::endl;
 
-    for (int i = 0; i < 5; ++i)
+  for (int i = 0; i < 5; ++i)
+  {
+    std::string readBuffer;
+    struct curl_slist *headers = NULL;
+
+    CURL *curl = setupCurl(url, readBuffer, headers);
+
+    if (curl)
     {
-        std::string readBuffer;
-        struct curl_slist *headers = NULL;
+      CURLcode res = curl_easy_perform(curl);
+      if (res == CURLE_OK)
+      {
+        auto json = nlohmann::json::parse(readBuffer);
+        std::string status = json["data"]["attributes"]["status"];
 
-        CURL *curl = setupCurl(url, readBuffer, headers);
-        
-        if (curl)
+        if (status == "completed")
         {
-            CURLcode res = curl_easy_perform(curl);
-            if (res == CURLE_OK)
-            {
-                auto json = nlohmann::json::parse(readBuffer);
-                std::string status = json["data"]["attributes"]["status"];
+          std::cout << "[+] Análise finalizada!" << std::endl;
 
-                if (status == "completed")
-                {
-                    std::cout << "[+] Análise finalizada!" << std::endl;
-                    auto stats = json["data"]["attributes"]["stats"];
-                    
-                    std::cout << "\n=== RESULTADO FINAL (APÓS UPLOAD) ===" << std::endl;
-                    std::cout << "Maliciosos: " << stats["malicious"] << std::endl;
-                    std::cout << "Inofensivos: " << stats["harmless"] << std::endl;
-                    std::cout << "=====================================\n" << std::endl;
-                    
-                    curl_slist_free_all(headers);
-                    curl_easy_cleanup(curl);
-                    return;
-                }
-                
-                std::cout << "[...] Status: " << status << ". Tentando novamente em 15s..." << std::endl;
-            }
-            
-            curl_slist_free_all(headers);
-            curl_easy_cleanup(curl);
+          displayResult(json);
+
+          curl_slist_free_all(headers);
+          curl_easy_cleanup(curl);
+          return;
         }
-        
-        std::this_thread::sleep_for(std::chrono::seconds(15));
+
+        std::cout << "[...] Status: " << status << ". Tentando novamente em 45s..." << std::endl;
+      }
+
+      curl_slist_free_all(headers);
+      curl_easy_cleanup(curl);
     }
 
-    std::cout << "[!] O tempo de espera esgotou." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(45));
+  }
+
+  std::cout << "[!] O tempo de espera esgotou." << std::endl;
 }
 
 void Scanner::displayResult(const nlohmann::json &report)
 {
-  auto stats = report["data"]["attributes"]["last_analysis_stats"];
+  if (!report.contains("data"))
+    return;
+
+  auto attributes = report["data"]["attributes"];
+  nlohmann::json stats;
+
+  if (attributes.contains("last_analysis_stats"))
+  {
+    stats = attributes["last_analysis_stats"];
+  }
+
+  if (stats.empty() && attributes.contains("stats"))
+  {
+    stats = attributes["stats"];
+  }
+
+  if (stats.empty())
+    return;
 
   int malicious = stats["malicious"];
   int suspicious = stats["suspicious"];

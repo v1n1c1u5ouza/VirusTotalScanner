@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Scanner.hpp"
+#include "Utils.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -11,7 +12,16 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  Scanner scanner("minha_chave_temporaria");
+  auto env = Utils::loadEnv(".env");
+  std::string apiKey = env["VT_API_KEY"];
+
+  if (apiKey.empty())
+  {
+    std::cerr << "[-] Erro: VT_API_KEY não encontrada no arquivo .env" << std::endl;
+    return 1;
+  }
+
+  Scanner scanner(apiKey);
   scanner.processFile(argv[1]);
 
   return 0;

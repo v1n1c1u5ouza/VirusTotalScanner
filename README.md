@@ -27,5 +27,36 @@ Este projeto faz parte do meu portfólio de **Engenharia de Segurança**. O obje
 - [x] **Análise em Tempo Real (Polling)**: Monitoramento automático do status de análise para novos uploads com tratamento de concorrência e timers.
 - [x] **Gestão de Memória**: Implementação robusta contra Dangling Pointers e Memory Leaks em loops de rede.
 
-## Como clonar e preparar o ambiente
-(Em breve: instruções de compilação para WSL/Ubuntu)
+## Como Clonar e Preparar o Ambiente (Ubuntu/WSL)
+
+### Obtenção da API Key
+Para utilizar esta ferramenta, é necessário possuir uma chave de autenticação oficial. Caso não possua uma, siga os passos abaixo:
+1. Acesse o portal oficial do [VirusTotal](https://www.virustotal.com/).
+2. Realize o cadastro ou efetue login em sua conta.
+3. Navegue até o seu perfil de usuário e selecione a opção **"API Key"**.
+4. Copie a sua chave privada disponível nesta seção. *Nota: A versão gratuita (Public API) possui limites de requisições por minuto.*
+
+### Instalação e Execução
+```bash
+# 1. Instalar Dependências do Sistema
+sudo apt update
+sudo apt install build-essential cmake libcurl4-openssl-dev nlohmann-json3-dev libssl-dev
+
+# 2. Clonar o Repositório
+git clone [https://github.com/seu-usuario/VirusTotalScanner.git](https://github.com/seu-usuario/VirusTotalScanner.git)
+cd VirusTotalScanner
+
+# 3. Configurar a API Key (Substitua pela sua chave obtida no portal)
+echo "VT_API_KEY=sua_chave_aqui" > .env
+
+# 4. Compilação e Build
+mkdir build && cd build
+cmake ..
+make
+
+# 5. Como Testar e Usar (Arquivos Conhecidos)
+./bin/vt_scanner /caminho/para/qualquer_arquivo_comum
+
+# 6. Testar Fluxo de Upload e Polling (Arquivos Inéditos)
+echo "Teste-Inedito-$(date)" > build/teste_unico.txt
+./bin/vt_scanner build/teste_unico.txt

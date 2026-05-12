@@ -43,7 +43,7 @@ sudo apt update
 sudo apt install build-essential cmake libcurl4-openssl-dev nlohmann-json3-dev libssl-dev
 
 # 2. Clonar o Repositório
-git clone [https://github.com/seu-usuario/VirusTotalScanner.git](https://github.com/seu-usuario/VirusTotalScanner.git)
+git clone https://github.com/v1n1c1u5ouza/VirusTotalScanner.git
 cd VirusTotalScanner
 
 # 3. Configurar a API Key (Substitua pela sua chave obtida no portal)
